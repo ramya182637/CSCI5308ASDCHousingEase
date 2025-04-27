@@ -27,7 +27,7 @@ const MapComponent = () => {
     };
 
     if (!window.google) {
-      loadScript(`https://maps.googleapis.com/maps/api/js?key=AIzaSyB6BYEa3LI5oNmBSsrQByfRgTD5OitQzgM&libraries=places`, () => {
+      loadScript(`https://maps.googleapis.com/maps/api/js?key=Replace with your API key &libraries=places`, () => {
         setIsScriptLoaded(true);
       });
     } else {
