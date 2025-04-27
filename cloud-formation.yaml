@@ -1,0 +1,746 @@
+Parameters:
+
+  DBUsername:
+    Description: "The database admin account username"
+    Type: String
+    Default: admin
+
+  DBPassword:
+    Description: "The database admin account password"
+    Type: String
+    NoEcho: true
+    Default: admin123
+
+  KeyName:
+    Description: "Name of an existing EC2 KeyPair to enable SSH access"
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: cloudarchi
+
+Resources:
+
+  DalHEVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: DalHEVPC
+
+  DalHEInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: DalHEInternetGateway
+
+  AttachInternetGatewayToVPC:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref DalHEVPC
+      InternetGatewayId: !Ref DalHEInternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DalHEVPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: PublicSubnet1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DalHEVPC
+      CidrBlock: 10.0.4.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: PublicSubnet2
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DalHEVPC
+      Tags:
+        - Key: Name
+          Value: PublicRouteTable
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref DalHEInternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  FrontendPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DalHEVPC
+      CidrBlock: 10.0.7.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: FrontendPrivateSubnet1
+
+  FrontendPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DalHEVPC
+      CidrBlock: 10.0.8.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: FrontendPrivateSubnet2
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DalHEVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DalHEVPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet2
+
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DalHEVPC
+      CidrBlock: 10.0.5.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet3
+
+  PrivateSubnet4:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DalHEVPC
+      CidrBlock: 10.0.6.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet4
+
+  FrontendPrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DalHEVPC
+      Tags:
+        - Key: Name
+          Value: FrontendPrivateRouteTable
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DalHEVPC
+      Tags:
+        - Key: Name
+          Value: PrivateRouteTable1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DalHEVPC
+      Tags:
+        - Key: Name
+          Value: PrivateRouteTable2
+
+  PrivateRouteTable3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DalHEVPC
+      Tags:
+        - Key: Name
+          Value: PrivateRouteTable3
+
+  PrivateRouteTable4:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DalHEVPC
+      Tags:
+        - Key: Name
+          Value: PrivateRouteTable4
+
+  FrontendPrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref FrontendPrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref DalHENATGateway
+
+  PrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref DalHENATGateway
+
+  PrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref DalHENATGateway
+
+  PrivateRoute3:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable3
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref DalHENATGateway
+
+  PrivateRoute4:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable4
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref DalHENATGateway
+
+  DalHEElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: DalHEElasticIP
+
+  DalHENATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt DalHEElasticIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: DalHENATGateway
+  
+  FrontendPrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref FrontendPrivateSubnet1
+      RouteTableId: !Ref FrontendPrivateRouteTable
+
+  FrontendPrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref FrontendPrivateSubnet2
+      RouteTableId: !Ref FrontendPrivateRouteTable
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable2
+
+  PrivateSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet3
+      RouteTableId: !Ref PrivateRouteTable3
+
+  PrivateSubnet4RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet4
+      RouteTableId: !Ref PrivateRouteTable4
+
+  FrontendLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: DalHEFrontendLoadBalancer
+      Subnets:
+        - Ref: PublicSubnet1
+        - Ref: PublicSubnet2
+      SecurityGroups:
+        - Ref: DalHEFrontendSecurityGroup
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: 60
+      Tags:
+        - Key: Name
+          Value: FrontendLoadBalancer
+
+  FrontendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Protocol: HTTP
+      Port: 3000
+      VpcId: !Ref DalHEVPC
+      TargetType: instance
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: 3000
+      HealthCheckPath: "/"
+      Tags:
+        - Key: Name
+          Value: FrontendTargetGroup
+
+  FrontendListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref FrontendLoadBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref FrontendTargetGroup
+
+  DalHEFrontendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP and HTTPS access for Frontend
+      VpcId: !Ref DalHEVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: DalHEFrontendSecurityGroup
+
+  DalHEBackendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow access from Frontend to Backend
+      VpcId: !Ref DalHEVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref BackendLoadBalanceSG
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref DalHEFrontendSecurityGroup
+      Tags:
+        - Key: Name
+          Value: DalHEBackendSecurityGroup
+
+  DalHEDatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow access from Backend to Database
+      VpcId: !Ref DalHEVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref DalHEBackendSecurityGroup
+      Tags:
+        - Key: Name
+          Value: DalHEDatabaseSecurityGroup
+
+  DalHERDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.t3.micro
+      Engine: mysql
+      EngineVersion: 8.0.35
+      DBInstanceIdentifier: dalhousingeasedb
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: dalhousingeasedb
+      VPCSecurityGroups:
+        - !Ref DalHEDatabaseSecurityGroup
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      MultiAZ: false
+      Port: 3306
+      AllocatedStorage: 20
+      StorageType: gp2
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for RDS in Private Subnet 1 and 2
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: RDSSubnetGroup
+
+  MyDatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: "MyDatabaseSecret"
+      Description: "Secret for the database credentials"
+      SecretString: !Sub |
+        {
+          "username": "${DBUsername}",
+          "password": "${DBPassword}",
+          "engine": "mysql",
+          "host": "${DalHERDSInstance.Endpoint.Address}",
+          "port": "3306",
+          "dbname": "dalhousingeasedb"
+        }
+
+  BackendLoadBalanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Backend Load Balancer
+      VpcId: !Ref DalHEVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: BackendLoadBalanceSG
+
+  BackendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Protocol: HTTP
+      Port: 8080
+      VpcId: !Ref DalHEVPC
+      TargetType: instance
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: 8080
+      HealthCheckPath: /
+      Tags:
+        - Key: Name
+          Value: BackendTargetGroup
+
+  BackendListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref BackendLoadBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup
+
+  BackendLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: DalHEBackendLoadBalancer
+      Subnets:
+        - Ref: PublicSubnet1
+        - Ref: PublicSubnet2
+      SecurityGroups:
+        - Ref: BackendLoadBalanceSG
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: 60
+      Tags:
+        - Key: Name
+          Value: BackendLoadBalancer
+
+  DalHEFrontendLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: DalHEFrontendLaunchTemplate
+      LaunchTemplateData:
+        InstanceType: t2.medium
+        KeyName: !Ref KeyName
+        ImageId: ami-0ba9883b710b05ac6
+        SecurityGroupIds:
+          - !Ref DalHEFrontendSecurityGroup
+        UserData: 
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            # Update packages
+            sudo yum update -y
+
+            # Install Docker
+            sudo yum install -y docker
+            sudo service docker start
+
+            # Pull Frontend Image from DockerHub and run the container
+            sudo docker pull kenilkevadiya/dalhousingease-frontend:ffi2test
+            sudo docker run -d -p 3000:3000 --name frontend kenilkevadiya/dalhousingease-frontend:ffi2test
+
+  DalHEFrontendAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn:
+      - FrontendListener
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DalHEFrontendLaunchTemplate
+        Version: !GetAtt DalHEFrontendLaunchTemplate.LatestVersionNumber
+      MinSize: 1
+      MaxSize: 3
+      DesiredCapacity: 1
+      VPCZoneIdentifier:
+        - !Ref FrontendPrivateSubnet1
+        - !Ref FrontendPrivateSubnet2
+      TargetGroupARNs:
+        - !Ref FrontendTargetGroup
+      Tags:
+        - Key: Name
+          Value: DalHEFrontendInstance
+          PropagateAtLaunch: true
+
+  DalHEBackendLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: DalHEBackendLaunchTemplate
+      LaunchTemplateData:
+        InstanceType: t2.medium
+        KeyName: !Ref KeyName
+        ImageId: ami-0ba9883b710b05ac6
+        SecurityGroupIds:
+          - !Ref DalHEBackendSecurityGroup
+        UserData: 
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            # Update packages
+            sudo yum update -y
+
+            # Install Docker
+            sudo yum install -y docker
+            sudo service docker start
+
+            # Pull Backend Image from DockerHub and run the container
+            sudo docker pull kenilkevadiya/dalhousingease-backend:bitest
+            sudo docker run -d -p 8080:8080 \
+              -e DATABASE_HOST=${DalHERDSInstance.Endpoint.Address} \
+              -e DATABASE_USER=admin \
+              -e DATABASE_PASSWORD=admin123 \
+              --name backend kenilkevadiya/dalhousingease-backend:bitest
+
+  DalHEBackendAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn:
+      - DalHEBackendLaunchTemplate
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DalHEBackendLaunchTemplate
+        Version: !GetAtt DalHEBackendLaunchTemplate.LatestVersionNumber
+      MinSize: 1
+      MaxSize: 3
+      DesiredCapacity: 1
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet3
+        - !Ref PrivateSubnet4
+      TargetGroupARNs:
+        - !Ref BackendTargetGroup
+      Tags:
+        - Key: Name
+          Value: DalHEBackendInstance
+          PropagateAtLaunch: true
+
+  LambdaConnectFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "TestLambdaSNS"
+      Runtime: "nodejs22.x"
+      Architectures:
+        - "x86_64"
+      Handler: "index.handler"
+      Code:
+        S3Bucket: "dhe-sns-bucket"
+        S3Key: "SNSLambda.zip"
+      Description: "Lambda function for SNS"
+      Role: arn:aws:iam::755307966205:role/LabRole
+      Timeout: 200
+
+  DalHERestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: "DalHEAPIGateway"
+      Description: "API Gateway for SNS Lambda"
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  ApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt DalHERestApi.RootResourceId
+      PathPart: "sns"
+      RestApiId: !Ref DalHERestApi
+
+  ApiGatewayPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: "NONE"
+      HttpMethod: "POST"
+      ResourceId: !Ref ApiResource
+      RestApiId: !Ref DalHERestApi
+      Integration:
+        Credentials: arn:aws:iam::755307966205:role/LabRole
+        IntegrationHttpMethod: "POST"
+        Type: AWS
+        Uri:
+          Fn::Sub:
+            - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+            - { LambdaArn: !GetAtt LambdaConnectFunction.Arn }
+        RequestTemplates:
+          application/json: ""
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: ""
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Credentials: "'true'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,access-control-allow-credentials'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS,DELETE'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Credentials: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            application/json: "Empty"
+
+  ApiGatewayOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: "NONE"
+      HttpMethod: "OPTIONS"
+      ResourceId: !Ref ApiResource
+      RestApiId: !Ref DalHERestApi
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          - StatusCode: "200"
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: "200"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            application/json: "Empty"
+
+  APIGatewayDeployment:
+    Type: "AWS::ApiGateway::Deployment"
+    Properties:
+      StageName: "dev"
+      RestApiId: !Ref DalHERestApi
+    DependsOn:
+      - ApiGatewayPostMethod
+      - ApiGatewayOptionsMethod
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt LambdaConnectFunction.Arn
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DalHERestApi}/*/POST/sns"
+
+  CloudWatchFrontendMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CloudWatchLogGroup
+      FilterPattern: "[frontendError=*]"
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: "DalHEAppFrontend"
+          MetricName: "FrontendErrors"
+
+  CloudWatchBackendMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CloudWatchLogGroup
+      FilterPattern: "[backendError=*]"
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: "DalHEAppBackend"
+          MetricName: "BackendErrors"
+
+  FrontendAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: "FrontendHighErrorRate"
+      AlarmDescription: "Alert for high error rate in the frontend."
+      MetricName: "FrontendErrors"
+      Namespace: "DalHEAppFrontend"
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - "arn:aws:sns:us-east-1:123456789012:DalHEAppAlerts"
+
+  BackendAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: "BackendHighErrorRate"
+      AlarmDescription: "Alert for high error rate in the backend."
+      MetricName: "BackendErrors"
+      Namespace: "DalHEAppBackend"
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - "arn:aws:sns:us-east-1:123456789012:DalHEAppAlerts"
+
+  AlertNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: "DalHEAppAlerts"
+      Subscription:
+        - Protocol: "email"
+          Endpoint: "ecommcloudarchitecture@gmail.com"
+
+Outputs:
+  LoadBalancerDNS:
+    Description: DNS name of the load balancer
+    Value: !GetAtt BackendLoadBalancer.DNSName
+    Export:
+      Name: LoadBalancerDNS
+
+  ApiGatewayInvokeUrl:
+    Description: "The invoke URL of the API Gateway"
+    Value: !Sub "https://${DalHERestApi}.execute-api.${AWS::Region}.amazonaws.com/dev/sns"
+    Export:
+      Name: ApiGatewayInvokeUrl
