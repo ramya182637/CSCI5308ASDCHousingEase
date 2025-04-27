@@ -24,7 +24,7 @@ export default function GoogleAPI(props) {
 
     return (
         <LoadScript
-            googleMapsApiKey="AIzaSyBjO1BZH__7F-O0kTqJU3PRb__sp3bjajg"
+            googleMapsApiKey="" // removed api key for security issues
             libraries={libraries}
         >
             {component}
